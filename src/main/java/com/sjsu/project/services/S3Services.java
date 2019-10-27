@@ -1,28 +1,26 @@
 package com.sjsu.project.services;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;
 import com.amazonaws.services.cognitoidp.model.AdminAddUserToGroupRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Versions;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
@@ -152,15 +150,11 @@ public class S3Services {
 	 * @return
 	 */
 	public String getFileURL(String keyName) {
+		String newurl="";
 		try {
-			
 			URL fileurl = s3client.getUrl(bucketName.trim(), keyName);
-			String oldurl = fileurl.toString();
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(oldurl);
-			String newurl = builder.host("d1t14z5wgf455n.cloudfront.net").toUriString();
+			newurl = new URIBuilder(URI.create(fileurl.toString())).setHost("d1t14z5wgf455n.cloudfront.net").build().toString();
 			logger.info("FILE URL: fileurl={}", newurl);
-			
-			return newurl;
 			
 		} catch (AmazonServiceException ase) {
 			logger.info("Caught an AmazonServiceException from PUT requests, rejected reasons:");
@@ -174,7 +168,12 @@ public class S3Services {
 			logger.info("Caught an AmazonClientException: ");
 			logger.info("Error Message: " + ace.getMessage());
 			throw ace;
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			//throw e;
 		}
+		return newurl;
 	}
 
 	
